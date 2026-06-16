@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Cloud BigQuery Release Notes Explorer</title>
+    <meta name="description" content="An elegant and responsive dashboard to search, filter, and track Google Cloud BigQuery release notes and updates.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <div class="logo-text">
+                    <h2>BigQuery</h2>
+                    <span>Release Explorer</span>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <label for="search-input" class="sr-only">Search release notes</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Search keywords..." autocomplete="off">
+                    <button id="clear-search" class="clear-btn" title="Clear search" aria-label="Clear search">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <nav class="filters-nav">
+                <h3>Filter by Category</h3>
+                <div class="category-filters" id="category-filters-container">
+                    <!-- Categories will be generated dynamically, but we have default fallbacks -->
+                    <label class="filter-item checked" data-category="all" id="filter-all">
+                        <input type="checkbox" checked value="all" class="sr-only">
+                        <span class="indicator all-indicator"></span>
+                        <span class="filter-label">All Categories</span>
+                        <span class="count-badge" id="count-all">0</span>
+                    </label>
+                    <label class="filter-item checked" data-category="Feature" id="filter-feature">
+                        <input type="checkbox" checked value="Feature" class="sr-only">
+                        <span class="indicator feature-indicator"></span>
+                        <span class="filter-label">Features</span>
+                        <span class="count-badge" id="count-feature">0</span>
+                    </label>
+                    <label class="filter-item checked" data-category="Change" id="filter-change">
+                        <input type="checkbox" checked value="Change" class="sr-only">
+                        <span class="indicator change-indicator"></span>
+                        <span class="filter-label">Changes</span>
+                        <span class="count-badge" id="count-change">0</span>
+                    </label>
+                    <label class="filter-item checked" data-category="Issue" id="filter-issue">
+                        <input type="checkbox" checked value="Issue" class="sr-only">
+                        <span class="indicator issue-indicator"></span>
+                        <span class="filter-label">Issues</span>
+                        <span class="count-badge" id="count-issue">0</span>
+                    </label>
+                    <label class="filter-item checked" data-category="Breaking" id="filter-breaking">
+                        <input type="checkbox" checked value="Breaking" class="sr-only">
+                        <span class="indicator breaking-indicator"></span>
+                        <span class="filter-label">Breaking</span>
+                        <span class="count-badge" id="count-breaking">0</span>
+                    </label>
+                    <label class="filter-item checked" data-category="Announcement" id="filter-announcement">
+                        <input type="checkbox" checked value="Announcement" class="sr-only">
+                        <span class="indicator announcement-indicator"></span>
+                        <span class="filter-label">Announcements</span>
+                        <span class="count-badge" id="count-announcement">0</span>
+                    </label>
+                </div>
+
+                <h3>Quick Date Filters</h3>
+                <div class="date-filters">
+                    <button class="date-btn active" data-days="all" id="date-all">All Time</button>
+                    <button class="date-btn" data-days="7" id="date-7">Last 7 Days</button>
+                    <button class="date-btn" data-days="30" id="date-30">Last 30 Days</button>
+                    <button class="date-btn" data-days="90" id="date-90">Last 90 Days</button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon moon-icon"></i>
+                    <i class="fa-solid fa-sun sun-icon"></i>
+                    <span id="theme-text">Light Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-left">
+                    <span class="feed-tag">Atom Feed</span>
+                    <h1 id="main-title">BigQuery - Release notes</h1>
+                    <p class="feed-url-info">
+                        Source: <a href="https://docs.cloud.google.com/feeds/bigquery-release-notes.xml" target="_blank" rel="noopener">docs.cloud.google.com <i class="fa-solid fa-arrow-up-right-from-square mini-icon"></i></a>
+                    </p>
+                </div>
+                <div class="header-right">
+                    <span class="sync-status" id="sync-status">Last checked: Just now</span>
+                    <button id="refresh-btn" class="btn btn-primary" title="Refresh Release Notes">
+                        <i class="fa-solid fa-arrows-rotate refresh-icon" id="spinner-icon"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Overview Cards -->
+            <section class="stats-overview" aria-label="Statistics Overview">
+                <div class="stat-card" data-stat="Feature">
+                    <div class="stat-icon feature-stat"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-val" id="stat-count-feature">0</span>
+                        <span class="stat-lbl">Features Added</span>
+                    </div>
+                </div>
+                <div class="stat-card" data-stat="Change">
+                    <div class="stat-icon change-stat"><i class="fa-solid fa-sliders"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-val" id="stat-count-change">0</span>
+                        <span class="stat-lbl">Updates & Changes</span>
+                    </div>
+                </div>
+                <div class="stat-card" data-stat="Issue">
+                    <div class="stat-icon issue-stat"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-val" id="stat-count-issue">0</span>
+                        <span class="stat-lbl">Issues & Fixes</span>
+                    </div>
+                </div>
+                <div class="stat-card" data-stat="Breaking">
+                    <div class="stat-icon breaking-stat"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-val" id="stat-count-breaking">0</span>
+                        <span class="stat-lbl">Breaking Changes</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading, Error and Empty States -->
+            <div id="loading-overlay" class="state-overlay hidden">
+                <div class="spinner-container">
+                    <div class="double-bounce1"></div>
+                    <div class="double-bounce2"></div>
+                </div>
+                <p>Fetching BigQuery release notes...</p>
+            </div>
+
+            <div id="error-overlay" class="state-overlay hidden">
+                <div class="error-icon">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <h2>Failed to load release notes</h2>
+                <p id="error-message">Unknown error occurred</p>
+                <button id="retry-btn" class="btn btn-secondary">Retry Connection</button>
+            </div>
+
+            <!-- Notes Timeline -->
+            <section class="timeline-container" id="timeline-container">
+                <!-- Timeline items will be injected here -->
+                <div class="timeline-line"></div>
+                <div id="timeline-events"></div>
+            </section>
+
+            <!-- No Results State -->
+            <div id="empty-state" class="state-overlay hidden">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h2>No release notes found</h2>
+                <p>Try adjusting your search query or filters.</p>
+                <button id="reset-filters-btn" class="btn btn-secondary">Reset Filters</button>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
